@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>App de Cálculo de Perda de Safra</title>
+  <style>
+    /* Estilo geral */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 20px;
+      background-color: #34495e;
+    }
+
+    nav button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #1abc9c;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    nav button:hover {
+      background-color: #16a085;
+    }
+
+    section {
+      max-width: 600px;
+      margin: 30px auto;
+      background: white;
+      padding: 25px 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      display: none;
+    }
+
+    form label {
+      margin-bottom: 5px;
+      display: block;
+      font-weight: bold;
+      color: #555;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+
+    form button {
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    form button:hover {
+      background-color: #2471a3;
+    }
+
+    #listaSafras h3 {
+      margin-top: 20px;
+      color: #2e86c1;
+    }
+
+    #listaSafras ul {
+      padding-left: 20px;
+      margin-bottom: 10px;
+    }
+
+    #listaSafras li {
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    @media (max-width: 700px) {
+      section {
+        margin: 20px;
+        padding: 20px;
+      }
+
+      nav {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>App de Cálculo de Perda de Safra</h1>
+
+  <nav>
+    <button onclick="mostrarSecao('novaSafra')">1. Registrar Nova Safra</button>
+    <button onclick="mostrarSecao('perdaPos')">2. Calcular Perda Pós-Colheita</button>
+    <button onclick="mostrarSecao('perdaPre')">3. Estimar Perda Pré-Colheita</button>
+    <button onclick="mostrarSecao('laudo')">4. Registrar Laudo Técnico</button>
+    <button onclick="mostrarSecao('visualizar')">5. Visualizar Safras Registradas</button>
+  </nav>
+
+  <!-- REGISTRAR SAFRA -->
+  <section id="novaSafra">
+    <h2>Registrar Nova Safra</h2>
+    <form onsubmit="registrarSafra(event)">
+      <label>Cultura: <input type="text" id="cultura" required></label>
+      <label>Área cultivada (ha): <input type="number" id="area" required></label>
+      <label>Produtividade esperada (kg/ha): <input type="number" id="produtividade" required></label>
+      <label>Data de plantio: <input type="date" id="dataPlantio" required></label>
+      <button type="submit">Salvar Safra</button>
+    </form>
+  </section>
+
+  <!-- PERDA PÓS-COLHEITA -->
+  <section id="perdaPos">
+    <h2>Perda Pós-Colheita (Amostragem)</h2>
+    <form onsubmit="calcularPerdaPos(event)">
+      <label>Selecione a Safra:
+        <select id="safraPos"></select>
+      </label>
+      <label>Número de amostras (1m²): <input type="number" id="numAmostras" required></label>
+      <div id="amostras"></div>
+      <button type="button" onclick="gerarCamposAmostras()">Gerar Campos de Amostra</button>
+      <button type="submit">Calcular Perda</button>
+    </form>
+  </section>
+
+  <!-- PERDA PRÉ-COLHEITA -->
+  <section id="perdaPre">
+    <h2>Perda Pré-Colheita (Milho)</h2>
+    <form onsubmit="calcularPerdaPre(event)">
+      <label>Selecione a Safra:
+        <select id="safraPre"></select>
+      </label>
+      <label>Número médio de espigas em 10m: <input type="number" id="espigas10m" required></label>
+      <label>Peso médio dos grãos por espiga (g): <input type="number" id="pesoEspiga" required></label>
+      <button type="submit">Estimar Perda</button>
+    </form>
+  </section>
+
+  <!-- LAUDO TÉCNICO -->
+  <section id="laudo">
+    <h2>Registrar Laudo Técnico</h2>
+    <form onsubmit="registrarLaudo(event)">
+      <label>Selecione a Safra:
+        <select id="safraLaudo"></select>
+      </label>
+      <label>Produtividade Real (kg/ha): <input type="number" id="prodLaudo" required></label>
+      <label>Observações: <input type="text" id="obsLaudo"></label>
+      <label>Nome do Perito: <input type="text" id="perito" required></label>
+      <button type="submit">Salvar Laudo</button>
+    </form>
+  </section>
+
+  <!-- VISUALIZAR SAFRAS -->
+  <section id="visualizar">
+    <h2>Safras Registradas</h2>
+    <div id="listaSafras"></div>
+  </section>
+
+  <script>
+    const safras = [];
+
+    function mostrarSecao(id) {
+      document.querySelectorAll("section").forEach(sec => sec.style.display = "none");
+      document.getElementById(id).style.display = "block";
+      atualizarSelects();
+      if (id === "visualizar") mostrarSafras();
+    }
+
+    function atualizarSelects() {
+      const selects = ["safraPos", "safraPre", "safraLaudo"];
+      selects.forEach(selId => {
+        const sel = document.getElementById(selId);
+        sel.innerHTML = "";
+        safras.forEach((safra, i) => {
+          const option = document.createElement("option");
+          option.value = i;
+          option.textContent = `ID ${safra.id} - ${safra.cultura}`;
+          sel.appendChild(option);
+        });
+      });
+    }
+
+    function registrarSafra(e) {
+      e.preventDefault();
+      const cultura = document.getElementById("cultura").value;
+      const area = +document.getElementById("area").value;
+      const produtividade = +document.getElementById("produtividade").value;
+      const data = document.getElementById("dataPlantio").value;
+
+      safras.push({
+        id: safras.length + 1,
+        cultura,
+        area,
+        produtividade,
+        data,
+        perdas: []
+      });
+
+      alert("Safra registrada!");
+      e.target.reset();
+    }
+
+    function gerarCamposAmostras() {
+      const n = +document.getElementById("numAmostras").value;
+      const container = document.getElementById("amostras");
+      container.innerHTML = "";
+      for (let i = 0; i < n; i++) {
+        container.innerHTML += `<label>Amostra ${i + 1} (g/m²): <input type="number" class="amostra" required></label>`;
+      }
+    }
+
+    function calcularPerdaPos(e) {
+      e.preventDefault();
+      const index = +document.getElementById("safraPos").value;
+      const amostras = [...document.querySelectorAll(".amostra")].map(input => +input.value);
+      const media = amostras.reduce((a, b) => a + b, 0) / amostras.length;
+      const perdaKgHa = (media / 1000) * 10000;
+      const safra = safras[index];
+      const perdaSacas = perdaKgHa / 60;
+      const perdaTotal = perdaKgHa * safra.area;
+      const produtividadeReal = Math.max(0, safra.produtividade - perdaKgHa);
+      const porcentagem = (perdaKgHa / safra.produtividade) * 100;
+
+      alert(`Perda estimada: ${perdaKgHa.toFixed(2)} kg/ha (${porcentagem.toFixed(2)}%)`);
+
+      safra.perdas.push({
+        tipo: "Pós-Colheita (Amostragem)",
+        perdaKgHa,
+        data: new Date().toLocaleDateString(),
+        obs: `Baseado em ${amostras.length} amostras.`,
+      });
+
+      e.target.reset();
+      document.getElementById("amostras").innerHTML = "";
+    }
+
+    function calcularPerdaPre(e) {
+      e.preventDefault();
+      const index = +document.getElementById("safraPre").value;
+      const espigas = +document.getElementById("espigas10m").value;
+      const peso = +document.getElementById("pesoEspiga").value;
+      const produtividadeEstimada = (espigas * peso * 1000) / 1000;
+      const safra = safras[index];
+      let perda = safra.produtividade - produtividadeEstimada;
+      if (perda < 0) perda = 0;
+      const perc = (perda / safra.produtividade) * 100;
+
+      alert(`Perda estimada: ${perda.toFixed(2)} kg/ha (${perc.toFixed(2)}%)`);
+
+      safra.perdas.push({
+        tipo: "Pré-Colheita (Estimativa)",
+        perdaKgHa: perda,
+        data: new Date().toLocaleDateString(),
+        obs: `Estimativa baseada em espigas e peso médio.`
+      });
+
+      e.target.reset();
+    }
+
+    function registrarLaudo(e) {
+      e.preventDefault();
+      const index = +document.getElementById("safraLaudo").value;
+      const prodReal = +document.getElementById("prodLaudo").value;
+      const obs = document.getElementById("obsLaudo").value;
+      const perito = document.getElementById("perito").value;
+      const safra = safras[index];
+      const perda = Math.max(0, safra.produtividade - prodReal);
+      const perc = (perda / safra.produtividade) * 100;
+
+      alert(`Laudo registrado: perda de ${perda.toFixed(2)} kg/ha (${perc.toFixed(2)}%)`);
+
+      safra.perdas.push({
+        tipo: "Laudo Técnico",
+        perdaKgHa: perda,
+        data: new Date().toLocaleDateString(),
+        obs,
+        perito
+      });
+
+      e.target.reset();
+    }
+
+    function mostrarSafras() {
+      const div = document.getElementById("listaSafras");
+      div.innerHTML = "";
+
+      if (safras.length === 0) {
+        div.innerHTML = "<p>Nenhuma safra registrada.</p>";
+        return;
+      }
+
+      safras.forEach(s => {
+        const el = document.createElement("div");
+        el.innerHTML = `
+          <h3>ID ${s.id} - ${s.cultura}</h3>
+          <p>Área: ${s.area} ha | Produtividade Esperada: ${s.produtividade} kg/ha | Plantio: ${s.data}</p>
+          <strong>Perdas:</strong>
+          <ul>${s.perdas.map(p => `<li>${p.tipo}: ${p.perdaKgHa.toFixed(2)} kg/ha - ${p.obs} (${p.data}${p.perito ? ` - Perito: ${p.perito}` : ""})</li>`).join('')}</ul>
+        `;
+        div.appendChild(el);
+      });
+    }
+  </script>
+</body>
+</html>
